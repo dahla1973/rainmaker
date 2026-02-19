@@ -1,0 +1,4 @@
+node_modules/
+src/renderer/dist/
+netatmo-tokens.json
+config.json

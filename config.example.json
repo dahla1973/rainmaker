@@ -1,0 +1,21 @@
+{
+  "refreshInterval": 30000,
+  "position": { "x": 50, "y": 50 },
+  "size": { "width": 320, "height": 600 },
+  "sources": {
+    "boat": {
+      "url": "http://fitpc.yoda.nu/api?format=json&forecast=false&sensorType=Common",
+      "metrics": [
+        { "id": "MAIN_BATTERY_VOLTAGE", "name": "Battery Voltage" },
+        { "id": "MAIN_BATTERY_SOC", "name": "Battery SoC" }
+      ]
+    },
+    "netatmo": {
+      "clientId": "YOUR_NETATMO_CLIENT_ID",
+      "clientSecret": "YOUR_NETATMO_CLIENT_SECRET",
+      "tokenFile": "netatmo-tokens.json",
+      "redirectPort": 9876,
+      "metrics": []
+    }
+  }
+}
