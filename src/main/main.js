@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { MetricFetcher } = require('./fetcher');
@@ -7,13 +7,16 @@ const isDev = !app.isPackaged;
 const configDir = path.join(__dirname, '..', '..');
 const configPath = path.join(configDir, 'config.json');
 
+const WIDGET_WIDTH = 320;
+const WIDGET_HEIGHT = 600;
+
 function loadConfig() {
   const raw = fs.readFileSync(configPath, 'utf-8');
   return JSON.parse(raw);
 }
 
-function saveConfig(config) {
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+function saveConfig(cfg) {
+  fs.writeFileSync(configPath, JSON.stringify(cfg, null, 2));
 }
 
 let mainWindow;
@@ -22,20 +25,37 @@ let fetcher;
 let tray;
 let config;
 
+function getDisplaysSortedByPosition() {
+  return screen.getAllDisplays().sort((a, b) => a.bounds.x - b.bounds.x);
+}
+
+function getTargetDisplay() {
+  const displays = screen.getAllDisplays();
+  if (config.displayId) {
+    const found = displays.find((d) => d.id === config.displayId);
+    if (found) return found;
+  }
+  return screen.getPrimaryDisplay();
+}
+
 function createWidget(config) {
-  const { position, size } = config;
+  const display = getTargetDisplay();
+  const offsetX = config.position?.x ?? 50;
+  const offsetY = config.position?.y ?? 50;
 
   mainWindow = new BrowserWindow({
-    x: position.x,
-    y: position.y,
-    width: size?.width || 320,
-    height: size?.height || 600,
+    x: display.workArea.x + offsetX,
+    y: display.workArea.y + offsetY,
+    width: WIDGET_WIDTH,
+    height: WIDGET_HEIGHT,
+    useContentSize: true,
     frame: false,
     transparent: true,
     resizable: false,
     skipTaskbar: true,
-    focusable: false,
+    focusable: true,
     show: true,
+    hasShadow: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -49,14 +69,51 @@ function createWidget(config) {
     mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'dist', 'index.html'));
   }
 
-  mainWindow.webContents.on('did-finish-load', async () => {
+  mainWindow.webContents.on('did-finish-load', () => {
     try {
-      const { embedWindow } = require('./desktop-embed');
+      const { embedWindow, keepAtBottom } = require('./desktop-embed');
       const hwndBuf = mainWindow.getNativeWindowHandle();
-      await embedWindow(hwndBuf);
+      embedWindow(hwndBuf);
+
+      // Periodically push to bottom of z-order so it stays behind other windows
+      const bottomInterval = setInterval(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          keepAtBottom(mainWindow.getNativeWindowHandle());
+        } else {
+          clearInterval(bottomInterval);
+        }
+      }, 2000);
     } catch (err) {
       console.error('Desktop embedding failed:', err.message);
     }
+  });
+
+  // Handle drag via IPC from renderer
+  ipcMain.on('widget-drag', (_event, deltaX, deltaY) => {
+    if (!mainWindow) return;
+    const [x, y] = mainWindow.getPosition();
+    // Use setBounds to set position AND size together, preventing Windows
+    // from rescaling the window when crossing DPI boundaries
+    mainWindow.setBounds({
+      x: x + deltaX,
+      y: y + deltaY,
+      width: WIDGET_WIDTH,
+      height: WIDGET_HEIGHT,
+    });
+  });
+
+  ipcMain.on('widget-drag-end', () => {
+    if (!mainWindow) return;
+    mainWindow.setContentSize(WIDGET_WIDTH, WIDGET_HEIGHT);
+    const [wx, wy] = mainWindow.getPosition();
+    const display = screen.getDisplayNearestPoint({ x: wx, y: wy });
+    config.displayId = display.id;
+    config.position = {
+      x: wx - display.workArea.x,
+      y: wy - display.workArea.y,
+    };
+    saveConfig(config);
+    buildTrayMenu();
   });
 
   mainWindow.on('closed', () => { mainWindow = null; });
@@ -86,13 +143,47 @@ function openSettings() {
   settingsWindow.on('closed', () => { settingsWindow = null; });
 }
 
-function createTray() {
-  const iconPath = path.join(configDir, 'assets', 'icon.ico');
-  tray = new Tray(iconPath);
-  tray.setToolTip('Rainmaker');
+function moveToDisplay(display) {
+  if (!mainWindow) return;
+  const offsetX = config.position?.x ?? 50;
+  const offsetY = config.position?.y ?? 50;
+  mainWindow.setPosition(display.workArea.x + offsetX, display.workArea.y + offsetY);
+  // Force correct size after cross-DPI move
+  mainWindow.setContentSize(WIDGET_WIDTH, WIDGET_HEIGHT);
+
+  config.displayId = display.id;
+  saveConfig(config);
+  buildTrayMenu();
+}
+
+function buildTrayMenu() {
+  const displays = getDisplaysSortedByPosition();
+  const primary = screen.getPrimaryDisplay();
+
+  const posLabels = displays.length === 3
+    ? ['Left', 'Center', 'Right']
+    : displays.length === 2
+      ? ['Left', 'Right']
+      : ['Display'];
+
+  const displayItems = displays.map((display, i) => {
+    const pw = Math.round(display.size.width * display.scaleFactor);
+    const ph = Math.round(display.size.height * display.scaleFactor);
+    const isPrimary = display.id === primary.id;
+    const label = `${posLabels[i]} — ${pw}x${ph}${isPrimary ? ' (Primary)' : ''}`;
+    const isCurrent = config.displayId === display.id || (!config.displayId && isPrimary);
+    return {
+      label,
+      type: 'radio',
+      checked: isCurrent,
+      click: () => moveToDisplay(display),
+    };
+  });
 
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Configure Sensors...', click: openSettings },
+    { type: 'separator' },
+    { label: 'Move to Display', submenu: displayItems },
     { type: 'separator' },
     { label: 'Refresh Now', click: () => { if (fetcher) fetcher.tick(); } },
     { type: 'separator' },
@@ -102,10 +193,19 @@ function createTray() {
   tray.setContextMenu(contextMenu);
 }
 
+function createTray() {
+  const iconPath = path.join(configDir, 'assets', 'icon.ico');
+  tray = new Tray(iconPath);
+  tray.setToolTip('Rainmaker');
+  buildTrayMenu();
+
+  screen.on('display-added', buildTrayMenu);
+  screen.on('display-removed', buildTrayMenu);
+}
+
 app.whenReady().then(() => {
   config = loadConfig();
 
-  // IPC handlers
   ipcMain.handle('get-config', () => config);
 
   ipcMain.handle('get-available-sensors', async (_event, source) => {
@@ -119,7 +219,6 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle('save-sensor-selection', (_event, source, selectedSensors) => {
-    // selectedSensors is an array of { id, name } objects
     if (source === 'netatmo') {
       config.sources.netatmo.metrics = selectedSensors;
     } else {
@@ -127,7 +226,6 @@ app.whenReady().then(() => {
     }
     saveConfig(config);
 
-    // Restart fetcher with new config
     if (fetcher) {
       fetcher.stop();
       fetcher = new MetricFetcher(config, configDir, sendToWidget);
@@ -151,7 +249,6 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', (e) => {
-  // Don't quit when settings window is closed — keep tray alive
   if (!mainWindow) {
     if (fetcher) fetcher.stop();
     app.quit();

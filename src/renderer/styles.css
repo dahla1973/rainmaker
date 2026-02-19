@@ -38,6 +38,7 @@ body {
   margin-bottom: 14px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: grab;
 }
 
 .widget-title {

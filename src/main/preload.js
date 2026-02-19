@@ -7,4 +7,6 @@ contextBridge.exposeInMainWorld('rainmaker', {
   getConfig: () => ipcRenderer.invoke('get-config'),
   getAvailableSensors: (source) => ipcRenderer.invoke('get-available-sensors', source),
   saveSensorSelection: (source, ids) => ipcRenderer.invoke('save-sensor-selection', source, ids),
+  drag: (deltaX, deltaY) => ipcRenderer.send('widget-drag', deltaX, deltaY),
+  dragEnd: () => ipcRenderer.send('widget-drag-end'),
 });
