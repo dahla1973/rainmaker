@@ -9,7 +9,7 @@
     "build:renderer": "vite build"
   },
   "dependencies": {
-    "electron": "^33.0.0",
+    "electron": "^40.5.0",
     "koffi": "^2.9.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
