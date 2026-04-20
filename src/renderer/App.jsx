@@ -5,6 +5,7 @@ import AlarmBadges from './AlarmBadges';
 export default function App() {
   const [groups, setGroups] = useState([]);
   const [alarms, setAlarms] = useState([]);
+  const [needsAuth, setNeedsAuth] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [dragging, setDragging] = useState(false);
   const lastPos = useRef(null);
@@ -15,6 +16,7 @@ export default function App() {
         const payload = Array.isArray(data) ? { groups: data, alarms: [] } : data;
         setGroups(payload.groups || []);
         setAlarms(payload.alarms || []);
+        setNeedsAuth(payload.needsAuth === true);
         setLastUpdate(new Date());
       });
     }
@@ -67,7 +69,12 @@ export default function App() {
         )}
       </div>
       <div className="widget-body">
-        {groups.length === 0 && (
+        {needsAuth && (
+          <div className="widget-auth-banner">
+            Sign in via tray → Configure Sensors → Account
+          </div>
+        )}
+        {!needsAuth && groups.length === 0 && (
           <div className="widget-loading">Connecting...</div>
         )}
         {groups.map((group) => (

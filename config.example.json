@@ -2,6 +2,10 @@
   "refreshInterval": 30000,
   "position": { "x": 50, "y": 50 },
   "size": { "width": 320, "height": 600 },
+  "firebase": {
+    "apiKey": "AIzaSyCUIBhAt265JgAIcit4zKUZdBex2AXSpbc",
+    "tokenFile": "firebase-tokens.json"
+  },
   "sources": {
     "boat": {
       "url": "http://fitpc.yoda.nu/api/v1/sensors?sensorType=Common",

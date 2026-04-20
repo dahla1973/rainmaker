@@ -7,10 +7,11 @@ function alarmKey(a) {
 }
 
 class MetricFetcher {
-  constructor(config, configDir, sendToRenderer, onNewErrorAlarms) {
+  constructor(config, configDir, sendToRenderer, onNewErrorAlarms, auth) {
     this.config = config;
     this.sendToRenderer = sendToRenderer;
     this.onNewErrorAlarms = onNewErrorAlarms;
+    this.auth = auth;
     this.timer = null;
     this.previousAlarmKeys = null;
 
@@ -22,14 +23,28 @@ class MetricFetcher {
   async tick() {
     const groups = [];
     let alarms = [];
+    let needsAuth = false;
 
     if (this.config.sources.boat) {
+      let token = null;
+      if (this.auth?.isSignedIn()) {
+        try {
+          token = await this.auth.getIdToken();
+        } catch (e) {
+          console.error('Token refresh failed:', e.message);
+          needsAuth = true;
+        }
+      } else {
+        needsAuth = true;
+      }
+
       const [boatData, boatAlarms] = await Promise.all([
-        fetchBoatMetrics(this.config.sources.boat),
-        fetchAlarms(this.config.sources.boat.url),
+        fetchBoatMetrics(this.config.sources.boat, token),
+        fetchAlarms(this.config.sources.boat.url, token),
       ]);
       groups.push(boatData);
       alarms = boatAlarms;
+      if (boatData.authFailed) needsAuth = true;
     }
 
     if (this.netatmo) {
@@ -38,7 +53,7 @@ class MetricFetcher {
     }
 
     this.detectNewAlarms(alarms);
-    this.sendToRenderer({ groups, alarms });
+    this.sendToRenderer({ groups, alarms, needsAuth });
   }
 
   detectNewAlarms(alarms) {

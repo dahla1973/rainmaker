@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../zandrom/Zandrom"
+		},
+		{
+			"path": "../zandrom/Zandrom.js"
 		}
 	],
 	"settings": {

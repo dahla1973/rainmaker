@@ -147,6 +147,43 @@ body {
   cursor: default;
 }
 
+.account-signin, .account-signed-in {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-field span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.account-field input {
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e0e0e0;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.account-field input:focus {
+  outline: none;
+  border-color: #5b9bd5;
+}
+
+.account-error {
+  color: #ff6b6b;
+  font-size: 12px;
+}
+
 /* Scrollbar */
 .sensor-list::-webkit-scrollbar {
   width: 4px;

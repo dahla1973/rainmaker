@@ -1,26 +1,41 @@
 const http = require('http');
 
-function fetchJSON(url) {
+function fetchJSON(url, token) {
   return new Promise((resolve, reject) => {
-    http.get(url, { timeout: 10000 }, (res) => {
+    const u = new URL(url);
+    const req = http.get({
+      hostname: u.hostname,
+      port: u.port || 80,
+      path: u.pathname + u.search,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      timeout: 10000,
+    }, (res) => {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
+        if (res.statusCode === 401 || res.statusCode === 403) {
+          const err = new Error(`Auth failed (${res.statusCode})`);
+          err.authFailed = true;
+          reject(err);
+          return;
+        }
         try {
           resolve(JSON.parse(data));
         } catch (e) {
           reject(new Error(`Invalid JSON: ${e.message}`));
         }
       });
-    }).on('error', reject);
+    });
+    req.on('error', reject);
+    req.on('timeout', () => req.destroy(new Error('timeout')));
   });
 }
 
-async function fetchBoatMetrics(config) {
+async function fetchBoatMetrics(config, token) {
   const { url, metrics: metricDefs } = config;
 
   try {
-    const sensors = await fetchJSON(url);
+    const sensors = await fetchJSON(url, token);
     const sensorMap = {};
     for (const sensor of sensors) {
       sensorMap[sensor.id] = sensor;
@@ -49,13 +64,14 @@ async function fetchBoatMetrics(config) {
         unit: '',
         error: err.message,
       })),
+      authFailed: err.authFailed === true,
     };
   }
 }
 
-async function fetchAllSensors(url) {
+async function fetchAllSensors(url, token) {
   try {
-    const sensors = await fetchJSON(url);
+    const sensors = await fetchJSON(url, token);
     return sensors.map((s) => ({
       id: s.id,
       label: s.label,

@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, Tray, Menu, Notification, screen } = requir
 const path = require('path');
 const fs = require('fs');
 const { MetricFetcher } = require('./fetcher');
+const { FirebaseAuth } = require('./firebase-auth');
 
 const isDev = !app.isPackaged;
 const configDir = path.join(__dirname, '..', '..');
@@ -24,6 +25,7 @@ let settingsWindow;
 let fetcher;
 let tray;
 let config;
+let firebaseAuth;
 
 function getDisplaysSortedByPosition() {
   return screen.getAllDisplays().sort((a, b) => a.bounds.x - b.bounds.x);
@@ -223,7 +225,32 @@ function notifyErrorAlarms(alarms) {
 app.whenReady().then(() => {
   config = loadConfig();
 
+  firebaseAuth = new FirebaseAuth({
+    apiKey: config.firebase?.apiKey,
+    tokenFile: path.join(configDir, config.firebase?.tokenFile || 'firebase-tokens.json'),
+  });
+
   ipcMain.handle('get-config', () => config);
+
+  ipcMain.handle('firebase-status', () => ({
+    signedIn: firebaseAuth.isSignedIn(),
+    email: firebaseAuth.email(),
+  }));
+
+  ipcMain.handle('firebase-signin', async (_event, email, password) => {
+    try {
+      const res = await firebaseAuth.signIn(email, password);
+      if (fetcher) fetcher.tick();
+      return { ok: true, email: res.email };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  });
+
+  ipcMain.handle('firebase-signout', () => {
+    firebaseAuth.signOut();
+    return true;
+  });
 
   ipcMain.handle('get-available-sensors', async (_event, source) => {
     if (source === 'netatmo') {
@@ -232,7 +259,11 @@ app.whenReady().then(() => {
       return await netatmo.fetchAvailableSensors();
     }
     const { fetchAllSensors } = require('./source-boat');
-    return await fetchAllSensors(config.sources.boat.url);
+    let token = null;
+    if (firebaseAuth.isSignedIn()) {
+      try { token = await firebaseAuth.getIdToken(); } catch {}
+    }
+    return await fetchAllSensors(config.sources.boat.url, token);
   });
 
   ipcMain.handle('save-sensor-selection', (_event, source, selectedSensors) => {
@@ -245,7 +276,7 @@ app.whenReady().then(() => {
 
     if (fetcher) {
       fetcher.stop();
-      fetcher = new MetricFetcher(config, configDir, sendToWidget, notifyErrorAlarms);
+      fetcher = new MetricFetcher(config, configDir, sendToWidget, notifyErrorAlarms, firebaseAuth);
       fetcher.start();
     }
 
@@ -261,7 +292,7 @@ app.whenReady().then(() => {
   createTray();
   createWidget(config);
 
-  fetcher = new MetricFetcher(config, configDir, sendToWidget, notifyErrorAlarms);
+  fetcher = new MetricFetcher(config, configDir, sendToWidget, notifyErrorAlarms, firebaseAuth);
   fetcher.start();
 });
 

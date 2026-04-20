@@ -89,6 +89,86 @@ function SensorList({ source, label }) {
   );
 }
 
+function AccountTab() {
+  const [status, setStatus] = useState({ signedIn: false, email: null });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function refresh() {
+    setStatus(await window.rainmaker.firebaseStatus());
+  }
+
+  useEffect(() => { refresh(); }, []);
+
+  async function signIn(e) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const res = await window.rainmaker.firebaseSignIn(email, password);
+    setBusy(false);
+    if (res.ok) {
+      setEmail('');
+      setPassword('');
+      refresh();
+    } else {
+      setError(res.error || 'Sign-in failed');
+    }
+  }
+
+  async function signOut() {
+    await window.rainmaker.firebaseSignOut();
+    refresh();
+  }
+
+  if (status.signedIn) {
+    return (
+      <div className="account-signed-in">
+        <p className="settings-hint">Signed in as <strong>{status.email}</strong></p>
+        <p className="settings-hint">Rainmaker uses this account's Firebase ID token to read from the Zandrom API.</p>
+        <div className="settings-footer">
+          <button className="save-btn" onClick={signOut}>Sign out</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form className="account-signin" onSubmit={signIn}>
+      <p className="settings-hint">
+        Sign in with a Firebase account (non-admin recommended — rainmaker only needs reads).
+      </p>
+      <label className="account-field">
+        <span>Email</span>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="username"
+          required
+        />
+      </label>
+      <label className="account-field">
+        <span>Password</span>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
+          required
+        />
+      </label>
+      {error && <p className="account-error">{error}</p>}
+      <div className="settings-footer">
+        <button type="submit" className="save-btn" disabled={busy}>
+          {busy ? 'Signing in...' : 'Sign in'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function Settings() {
   const [tab, setTab] = useState('boat');
 
@@ -97,10 +177,12 @@ export default function Settings() {
       <div className="tab-bar">
         <button className={`tab ${tab === 'boat' ? 'active' : ''}`} onClick={() => setTab('boat')}>Boat</button>
         <button className={`tab ${tab === 'netatmo' ? 'active' : ''}`} onClick={() => setTab('netatmo')}>Home (Netatmo)</button>
+        <button className={`tab ${tab === 'account' ? 'active' : ''}`} onClick={() => setTab('account')}>Account</button>
       </div>
       <div className="tab-content">
         {tab === 'boat' && <SensorList source="boat" label="Boat" />}
         {tab === 'netatmo' && <SensorList source="netatmo" label="Netatmo" />}
+        {tab === 'account' && <AccountTab />}
       </div>
     </div>
   );

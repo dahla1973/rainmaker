@@ -1,4 +1,5 @@
 node_modules/
 src/renderer/dist/
 netatmo-tokens.json
+firebase-tokens.json
 config.json

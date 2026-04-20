@@ -12,4 +12,7 @@ contextBridge.exposeInMainWorld('rainmaker', {
   saveSensorSelection: (source, ids) => ipcRenderer.invoke('save-sensor-selection', source, ids),
   drag: (deltaX, deltaY) => ipcRenderer.send('widget-drag', deltaX, deltaY),
   dragEnd: () => ipcRenderer.send('widget-drag-end'),
+  firebaseStatus: () => ipcRenderer.invoke('firebase-status'),
+  firebaseSignIn: (email, password) => ipcRenderer.invoke('firebase-signin', email, password),
+  firebaseSignOut: () => ipcRenderer.invoke('firebase-signout'),
 });

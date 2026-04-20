@@ -242,6 +242,18 @@ body {
   padding: 20px 0;
 }
 
+.widget-auth-banner {
+  text-align: center;
+  color: #f1c40f;
+  font-size: 12px;
+  padding: 16px 8px;
+  background: rgba(241, 196, 15, 0.08);
+  border: 1px solid rgba(241, 196, 15, 0.25);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
 /* Scrollbar */
 .widget-body::-webkit-scrollbar {
   width: 4px;
