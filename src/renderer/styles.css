@@ -54,6 +54,121 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.alarm-badges-wrap {
+  position: relative;
+  margin-left: auto;
+  margin-right: 8px;
+}
+
+.alarm-badges {
+  background: transparent;
+  border: none;
+  padding: 2px 4px;
+  display: flex;
+  gap: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.alarm-badges:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.badge-error .badge-icon {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.badge-error .badge-count {
+  color: #e74c3c;
+}
+
+.badge-warning .badge-icon {
+  background: transparent;
+  color: #f1c40f;
+  border-radius: 0;
+  width: auto;
+  height: auto;
+  font-size: 13px;
+}
+
+.badge-warning .badge-count {
+  color: #f1c40f;
+}
+
+.alarm-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: rgba(20, 20, 26, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 6px;
+  min-width: 220px;
+  max-width: 280px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.alarm-item {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border-left: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.alarm-item.alarm-error {
+  border-left-color: #e74c3c;
+}
+
+.alarm-item.alarm-warning {
+  border-left-color: #f1c40f;
+}
+
+.alarm-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.alarm-meta {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.alarm-trigger {
+  color: rgba(255, 255, 255, 0.4);
+}
+
 .widget-body {
   flex: 1;
   overflow-y: auto;

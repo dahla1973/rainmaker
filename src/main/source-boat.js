@@ -20,9 +20,9 @@ async function fetchBoatMetrics(config) {
   const { url, metrics: metricDefs } = config;
 
   try {
-    const json = await fetchJSON(url);
+    const sensors = await fetchJSON(url);
     const sensorMap = {};
-    for (const sensor of json.sensors) {
+    for (const sensor of sensors) {
       sensorMap[sensor.id] = sensor;
     }
 
@@ -55,8 +55,8 @@ async function fetchBoatMetrics(config) {
 
 async function fetchAllSensors(url) {
   try {
-    const json = await fetchJSON(url);
-    return json.sensors.map((s) => ({
+    const sensors = await fetchJSON(url);
+    return sensors.map((s) => ({
       id: s.id,
       label: s.label,
       unit: s.unit,

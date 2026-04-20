@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx electron:*)",
+      "Bash(npx vite)",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)",
+      "WebFetch(domain:fitpc.yoda.nu)",
+      "WebSearch",
+      "Bash(curl:*)",
+      "WebFetch(domain:dev.netatmo.com)",
+      "Bash(npx vite build)",
+      "Bash(node -e:*)",
+      "Bash(git init:*)",
+      "Bash(gh repo create:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(npm audit:*)"
+    ]
+  }
+}

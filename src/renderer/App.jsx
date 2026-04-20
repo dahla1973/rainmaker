@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MetricGroup from './MetricGroup';
+import AlarmBadges from './AlarmBadges';
 
 export default function App() {
   const [groups, setGroups] = useState([]);
+  const [alarms, setAlarms] = useState([]);
   const [lastUpdate, setLastUpdate] = useState(null);
   const [dragging, setDragging] = useState(false);
   const lastPos = useRef(null);
@@ -10,7 +12,9 @@ export default function App() {
   useEffect(() => {
     if (window.rainmaker) {
       window.rainmaker.onMetricsUpdate((data) => {
-        setGroups(data);
+        const payload = Array.isArray(data) ? { groups: data, alarms: [] } : data;
+        setGroups(payload.groups || []);
+        setAlarms(payload.alarms || []);
         setLastUpdate(new Date());
       });
     }
@@ -55,6 +59,7 @@ export default function App() {
         style={dragging ? { cursor: 'grabbing' } : undefined}
       >
         <span className="widget-title">Rainmaker</span>
+        <AlarmBadges alarms={alarms} />
         {lastUpdate && (
           <span className="widget-time">
             {lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

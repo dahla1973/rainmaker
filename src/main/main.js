@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, Notification, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { MetricFetcher } = require('./fetcher');
@@ -203,6 +203,23 @@ function createTray() {
   screen.on('display-removed', buildTrayMenu);
 }
 
+app.setAppUserModelId('nu.yoda.rainmaker');
+
+function notifyErrorAlarms(alarms) {
+  for (const a of alarms) {
+    if (Notification.isSupported()) {
+      new Notification({
+        title: `Alarm: ${a.name}`,
+        body: `${a.currentValue ?? ''}${a.triggerValue ? ` (trigger ${a.triggerValue})` : ''}`.trim() || 'Triggered',
+        urgency: 'critical',
+      }).show();
+    }
+  }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('alarms-new', alarms);
+  }
+}
+
 app.whenReady().then(() => {
   config = loadConfig();
 
@@ -228,7 +245,7 @@ app.whenReady().then(() => {
 
     if (fetcher) {
       fetcher.stop();
-      fetcher = new MetricFetcher(config, configDir, sendToWidget);
+      fetcher = new MetricFetcher(config, configDir, sendToWidget, notifyErrorAlarms);
       fetcher.start();
     }
 
@@ -244,7 +261,7 @@ app.whenReady().then(() => {
   createTray();
   createWidget(config);
 
-  fetcher = new MetricFetcher(config, configDir, sendToWidget);
+  fetcher = new MetricFetcher(config, configDir, sendToWidget, notifyErrorAlarms);
   fetcher.start();
 });
 
