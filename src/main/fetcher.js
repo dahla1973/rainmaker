@@ -40,7 +40,7 @@ class MetricFetcher {
 
       const [boatData, boatAlarms] = await Promise.all([
         fetchBoatMetrics(this.config.sources.boat, token),
-        fetchAlarms(this.config.sources.boat.url, token),
+        fetchAlarms(this.config.sources.boat, token),
       ]);
       groups.push(boatData);
       alarms = boatAlarms;

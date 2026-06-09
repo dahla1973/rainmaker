@@ -1,40 +1,10 @@
-const http = require('http');
-
-function fetchJSON(url, token) {
-  return new Promise((resolve, reject) => {
-    const u = new URL(url);
-    const req = http.get({
-      hostname: u.hostname,
-      port: u.port || 80,
-      path: u.pathname + u.search,
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      timeout: 10000,
-    }, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        if (res.statusCode === 401 || res.statusCode === 403) {
-          const err = new Error(`Auth failed (${res.statusCode})`);
-          err.authFailed = true;
-          reject(err);
-          return;
-        }
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error(`Invalid JSON: ${e.message}`));
-        }
-      });
-    });
-    req.on('error', reject);
-    req.on('timeout', () => req.destroy(new Error('timeout')));
-  });
-}
+const { fetchJSON, resolveUrl } = require('./api');
 
 async function fetchBoatMetrics(config, token) {
-  const { url, metrics: metricDefs } = config;
+  const { metrics: metricDefs } = config;
 
   try {
+    const url = await resolveUrl(config);
     const sensors = await fetchJSON(url, token);
     const sensorMap = {};
     for (const sensor of sensors) {
@@ -69,8 +39,9 @@ async function fetchBoatMetrics(config, token) {
   }
 }
 
-async function fetchAllSensors(url, token) {
+async function fetchAllSensors(config, token) {
   try {
+    const url = await resolveUrl(config);
     const sensors = await fetchJSON(url, token);
     return sensors.map((s) => ({
       id: s.id,

@@ -263,7 +263,7 @@ app.whenReady().then(() => {
     if (firebaseAuth.isSignedIn()) {
       try { token = await firebaseAuth.getIdToken(); } catch {}
     }
-    return await fetchAllSensors(config.sources.boat.url, token);
+    return await fetchAllSensors(config.sources.boat, token);
   });
 
   ipcMain.handle('save-sensor-selection', (_event, source, selectedSensors) => {

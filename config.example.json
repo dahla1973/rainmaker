@@ -8,7 +8,8 @@
   },
   "sources": {
     "boat": {
-      "url": "http://fitpc.yoda.nu/api/v1/sensors?sensorType=Common",
+      "url": "http://192.168.0.3/api/v1/sensors?sensorType=Common",
+      "publicUrl": "https://sofiacarolina.yoda.nu/api/v1/sensors?sensorType=Common",
       "metrics": [
         { "id": "MAIN_BATTERY_VOLTAGE", "name": "Battery Voltage" },
         { "id": "MAIN_BATTERY_SOC", "name": "Battery SoC" }
