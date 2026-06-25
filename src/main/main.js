@@ -222,7 +222,7 @@ function notifyErrorAlarms(alarms) {
   }
 }
 
-app.whenReady().then(() => {
+function onReady() {
   config = loadConfig();
 
   firebaseAuth = new FirebaseAuth({
@@ -294,7 +294,16 @@ app.whenReady().then(() => {
 
   fetcher = new MetricFetcher(config, configDir, sendToWidget, notifyErrorAlarms, firebaseAuth);
   fetcher.start();
-});
+}
+
+// Single-instance guard: a second launch (e.g. the startup .bat firing while a
+// copy is already open) would stack duplicate widgets that fight over z-order
+// and look like a too-fast refresh. Bail out if another instance holds the lock.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.whenReady().then(onReady);
+}
 
 app.on('window-all-closed', (e) => {
   if (!mainWindow) {

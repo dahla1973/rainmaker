@@ -235,6 +235,13 @@ body {
   color: rgba(255, 100, 100, 0.8);
 }
 
+/* Stale value: API reported oldValue=true */
+.metric-old .metric-value,
+.metric-old .metric-unit {
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: line-through;
+}
+
 .widget-loading {
   text-align: center;
   color: rgba(255, 255, 255, 0.4);

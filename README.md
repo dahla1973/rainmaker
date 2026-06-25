@@ -39,7 +39,8 @@ Windows desktop widget that displays boat and home metrics directly on the deskt
 
 Edit `config.json` to customize:
 
-- `refreshInterval` — data fetch interval in ms (default 30000)
+- `refreshInterval` — boat data fetch interval in ms (default 5000)
+- `netatmoRefreshInterval` — Netatmo fetch interval in ms (default 300000); kept slower than the boat tick because Netatmo is rate-limited and only updates every ~10 min
 - `position` — widget position on screen `{ x, y }`
 - `size` — widget dimensions `{ width, height }`
 - `sources.boat.url` — boat API endpoint

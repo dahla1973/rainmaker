@@ -15,6 +15,13 @@ class MetricFetcher {
     this.timer = null;
     this.previousAlarmKeys = null;
 
+    // Netatmo data only changes server-side every ~10 min and its API is
+    // rate-limited, so it is fetched on a slower cadence than the boat tick and
+    // its last result is reused in between.
+    this.netatmoInterval = config.netatmoRefreshInterval ?? 300000;
+    this.cachedNetatmoGroup = null;
+    this.lastNetatmoFetch = 0;
+
     if (config.sources.netatmo?.clientId) {
       this.netatmo = new NetatmoSource(config.sources.netatmo, configDir);
     }
@@ -48,8 +55,12 @@ class MetricFetcher {
     }
 
     if (this.netatmo) {
-      const homeData = await this.netatmo.fetchMetrics();
-      groups.push(homeData);
+      const now = Date.now();
+      if (!this.cachedNetatmoGroup || now - this.lastNetatmoFetch >= this.netatmoInterval) {
+        this.cachedNetatmoGroup = await this.netatmo.fetchMetrics();
+        this.lastNetatmoFetch = now;
+      }
+      groups.push(this.cachedNetatmoGroup);
     }
 
     this.detectNewAlarms(alarms);

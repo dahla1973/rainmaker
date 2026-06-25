@@ -21,6 +21,8 @@ async function fetchBoatMetrics(config, token) {
         value: sensor.formattedValue || '—',
         unit: '',
         error: null,
+        old: sensor.oldValue === true,
+        lastUpdated: sensor.lastUpdated || null,
       };
     });
 
